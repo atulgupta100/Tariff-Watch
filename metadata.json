@@ -1,0 +1,5 @@
+{
+  "name": "Tariff Watch",
+  "description": "Global customs duty and landed cost calculator. Search by product name or HTS to estimate international shipping costs, duties, and taxes.",
+  "requestFramePermissions": []
+}
