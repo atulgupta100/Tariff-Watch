@@ -8,7 +8,9 @@ import {
   TradeIntelligence, 
   DutyBreakdownItem, 
   getDutyBreakdownOnly, 
-  ReasoningStep
+  ReasoningStep,
+  getLatestTradeNews,
+  TradeNewsItem
 } from './services/geminiService';
 import { lookupDuty, getLocalDb } from './services/localDbService';
 import { ProductInfo, CalculationInputs, CalculationResult, AdditionalCost } from './types';
@@ -63,6 +65,7 @@ const App: React.FC = () => {
   const [suggestions, setSuggestions] = useState<HtsClassificationOption[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [suggestionsLoading, setSuggestionsLoading] = useState(false);
+  const [tradeNews, setTradeNews] = useState<TradeNewsItem[]>([]);
   
   const suggestionRef = useRef<HTMLDivElement>(null);
   const debounceTimer = useRef<number | null>(null);
@@ -80,6 +83,11 @@ const App: React.FC = () => {
     additionalCosts: [],
     inlandLogistics: []
   });
+
+  // Fetch News on Mount
+  useEffect(() => {
+    getLatestTradeNews().then(setTradeNews).catch(console.error);
+  }, []);
 
   // Handle click outside suggestions
   useEffect(() => {
@@ -255,7 +263,45 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-slate-50 flex overflow-hidden">
-      <aside className={`bg-slate-900 text-white transition-all duration-300 flex flex-col z-[60] shrink-0 ${isSidebarOpen ? 'w-44' : 'w-20'}`}>
+      {/* Dynamic News Ticker */}
+      <div className="fixed top-0 left-0 right-0 z-[100] h-7 bg-slate-900 text-white flex items-center overflow-hidden border-b border-white/5">
+        <div className="bg-blue-600 h-full flex items-center px-4 shrink-0 relative z-10 shadow-[5px_0_15px_rgba(0,0,0,0.5)]">
+          <span className="text-[9px] font-black uppercase tracking-widest flex items-center gap-2">
+            <i className="fa-solid fa-tower-broadcast animate-pulse"></i> Trade News
+          </span>
+        </div>
+        <div className="flex whitespace-nowrap animate-marquee hover:[animation-play-state:paused] items-center">
+          {tradeNews.length > 0 ? (
+            [...tradeNews, ...tradeNews].map((news, i) => (
+              <a 
+                key={i} 
+                href={news.url} 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="inline-flex items-center gap-2 mx-8 text-[10px] font-bold text-slate-300 hover:text-blue-400 transition-colors"
+              >
+                <span className="text-blue-600 font-black">[{news.source}]</span>
+                {news.title}
+                <i className="fa-solid fa-arrow-up-right-from-square text-[8px] opacity-40"></i>
+              </a>
+            ))
+          ) : (
+            <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 mx-8 animate-pulse">Syncing global trade intelligence...</span>
+          )}
+        </div>
+      </div>
+
+      <style>{`
+        @keyframes marquee {
+          0% { transform: translateX(0); }
+          100% { transform: translateX(-50%); }
+        }
+        .animate-marquee {
+          animation: marquee 40s linear infinite;
+        }
+      `}</style>
+
+      <aside className={`bg-slate-900 text-white transition-all duration-300 flex flex-col z-[60] shrink-0 mt-7 ${isSidebarOpen ? 'w-44' : 'w-20'}`}>
         <div className="h-16 flex items-center px-6 border-b border-slate-800">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white shrink-0 shadow-lg shadow-blue-900/20">
@@ -287,7 +333,7 @@ const App: React.FC = () => {
         </div>
       </aside>
 
-      <div className="flex-grow flex flex-col h-screen overflow-y-auto relative">
+      <div className="flex-grow flex flex-col h-screen overflow-y-auto relative pt-7">
         <header className="bg-white/80 backdrop-blur-md border-b border-slate-200 sticky top-0 z-50 h-16 flex items-center px-6 justify-between">
           <div className="flex items-center gap-4">
              <h2 className="text-sm font-black text-slate-900 uppercase tracking-tighter">
